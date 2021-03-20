@@ -1,0 +1,143 @@
+---
+title: "practical machine learning"
+author: "Gal_Anonim"
+date: "3/20/2021"
+output: html_document
+---
+# Overwiew 
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+Loading Data and Libraries
+Loading all the libraries and the data
+
+# Prediction Quiz
+
+Apply your machine learning algorithm to the 20 test cases available in the test data above and submit your predictions in appropriate format to the Course Project Prediction Quiz for automated grading.
+
+## Practical machine learning project
+
+Load all of the needed packages and set a seed
+
+```{r}
+library(lattice)
+library(ggplot2)
+library(caret)
+library(kernlab)
+library(rattle)
+library(corrplot)
+set.seed(1234)
+```
+
+Downloading and reading data
+
+```{r}
+traincsv <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv")
+testcsv <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv")
+# Check how train data looks like
+dim(traincsv)
+```
+
+```{r}
+# Check how test data looks like
+dim(testcsv)
+```
+
+We see that there are 160 variables and 19622 observations in the training set, while 20 for the test set.
+
+Remove columns with NAs and metadata which irrelevant to the outcome
+
+```{r}
+traincsv <- traincsv[,colMeans(is.na(traincsv)) < .9] #removing mostly na columns
+traincsv <- traincsv[,-c(1:7)] #removing metadata which is irrelevant to the outcome
+```
+
+Removing near zero variance variables.
+
+```{r}
+nvz <- nearZeroVar(traincsv)
+traincsv <- traincsv[,-nvz]
+dim(traincsv)
+```
+
+Split the training set into a validation and sub training set. The testing set “testcsv” will be left alone, and used for the final quiz test cases.
+
+```{r}
+inTrain <- createDataPartition(y=traincsv$classe, p=0.7, list=F)
+train <- traincsv[inTrain,]
+valid <- traincsv[-inTrain,]
+
+```
+
+# Creating and Testing the Models
+
+Here we will test a few popular models including: Decision Trees, Random Forest, Gradient Boosted Trees, and SVM. Those models will be compared.
+
+Set up control for training to use 3-fold cross validation.
+
+```{r}
+control <- trainControl(method="cv", number=3, verboseIter=F)
+```
+
+Decision Tree
+```{r}
+mod_trees <- train(classe~., data=train, method="rpart", trControl = control, tuneLength = 5)
+fancyRpartPlot(mod_trees$finalModel)
+```
+
+Prediction
+```{r}
+pred_trees <- predict(mod_trees, valid)
+cmtrees <- confusionMatrix(pred_trees, factor(valid$classe))
+cmtrees
+```
+
+
+Random Forest
+
+```{r}
+mod_rf <- train(classe~., data=train, method="rf", trControl = control, tuneLength = 5)
+
+pred_rf <- predict(mod_rf, valid)
+cmrf <- confusionMatrix(pred_rf, factor(valid$classe))
+cmrf
+```
+
+Gradient Boosted Trees
+```{r}
+mod_gbm <- train(classe~., data=train, method="gbm", trControl = control, tuneLength = 5, verbose = F)
+
+pred_gbm <- predict(mod_gbm, valid)
+cmgbm <- confusionMatrix(pred_gbm, factor(valid$classe))
+cmgbm
+```
+
+Support Vector Machine
+
+```{r}
+mod_svm <- train(classe~., data=train, method="svmLinear", trControl = control, tuneLength = 5, verbose = F)
+
+pred_svm <- predict(mod_svm, valid)
+cmsvm <- confusionMatrix(pred_svm, factor(valid$classe))
+cmsvm
+```
+# Conclusion
+The best model is the Random Forest model, with 0.9957519 accuracy and 0.0042481 out of sample error rate. We find that to be a sufficient enough model to use for our test sets.
+
+# Prediction test
+
+Predictions on Test Set
+```{r}
+pred <- predict(mod_rf, testcsv)
+print(pred)
+```
+
+Plot the outcome
+
+FIGURE
+
+```{r}
+corrPlot <- cor(train[, -length(names(train))])
+corrplot(corrPlot, method="color")
+
+```
+
+
