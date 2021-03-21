@@ -299,4 +299,4 @@ FIGURE
     corrPlot <- cor(train[, -length(names(train))])
     corrplot(corrPlot, method="color")
 
-![](practical-notes_files/figure-markdown_strict/unnamed-chunk-14-1.png)
+![](https://github.com/AKoroza/Practical-Machine-Learning/blob/3e5ee249330631981ab8dadc1eb62d019705b04/practical-notes_files/figure-markdown_strict/unnamed-chunk-14-1.png)
